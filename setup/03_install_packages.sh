@@ -13,7 +13,7 @@ source "$VENV/bin/activate"
 # opencv-python-headless: venv 가 시스템 OpenCV 를 보지 못하고, 이 휠은 자체 FFmpeg 로 RTSP 를 연다 (4·8·9단계 카메라)
 pip install -c "$PIN" -U \
   "sentence-transformers[image,video]>=6.1.0" transformers accelerate \
-  soundfile librosa av pillow huggingface_hub opencv-python-headless
+  soundfile librosa av pillow huggingface_hub opencv-python-headless datasets
 if ! grep -q '^torchaudio==' "$PIN"; then
   pip uninstall -y torchaudio 2>/dev/null || true
 fi
