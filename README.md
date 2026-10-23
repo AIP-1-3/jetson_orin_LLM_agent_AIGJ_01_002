@@ -32,7 +32,7 @@ flowchart LR
 | --- | --- |
 | `setup/01_check_env.sh` | JetPack 6/7, NVMe 부팅 여부, 스왑, 전력 모드를 읽기만 해서 자료의 어느 명령을 건너뛸지 알려 줌 |
 | `setup/02_install_torch.sh` | `~/eg2` venv, JetPack 에 맞는 torch 설치, 실제 GPU 행렬곱으로 검증, 버전 고정 파일 생성 |
-| `setup/03_install_packages.sh` | torch 고정 상태로 sentence-transformers 6.1+ 설치, 모델 미리 받기, `lab/check.py` 실행 |
+| `setup/03_install_packages.sh` | torch 고정 상태로 sentence-transformers 6.1+·opencv-python-headless 설치, 모델 미리 받기, `lab/check.py` 실행 |
 | `lab/eg2.py` | 필요한 인코더만 골라 올리는 로더 (bfloat16) |
 | `lab/test_text.py` `test_vision.py` `test_audio.py` | 3·4·5단계. 데우기 후 두 번째 실행 지연을 재고 정답 여부를 기록 |
 | `lab/bench.py` | 지연, 로드 전후 RAM, torch 할당량, 측정 조건(전력 모드·L4T·버전·커밋)을 `results/<단계>.jsonl` 에 추가 |
@@ -219,7 +219,7 @@ RAM 은 시스템 전체 사용량(MemTotal - MemAvailable). 다른 프로세스
 
 - **증상**: 강의자료 방식(`ffmpeg -rtsp_transport tcp -i rtsp://... -c:v libx264`)으로 쓴 첫 `record_clip.sh` 를 실행하기 전 점검에서, 2호기 ffmpeg 의 `-protocols` 목록에 `file`, `pipe` 만 있고 rtsp·tcp 가 없으며 인코더 목록에 libx264 가 없음을 확인
 - **원인**: 문제 해결 기록 2 와 같은 NVIDIA 판 ffmpeg(7:8.0.1-nvidia1)가 네트워크 기능을 끄고(`--disable-network`) 빌드돼 있습니다.
-- **해결**: OpenCV 는 자체 FFmpeg 라이브러리(libavformat 6.1)를 써서 RTSP 를 열 수 있으므로, `lab/camera.py` 의 `open_capture()` 로 받아 `cv2.VideoWriter`(mp4v)로 저장합니다 (`lab/record_clip.py`). 화면 출력에는 `mask()` 로 계정을 가립니다.
+- **해결**: OpenCV 는 시스템 ffmpeg 가 아닌 자체 FFmpeg 라이브러리로 RTSP 를 열 수 있으므로, `lab/camera.py` 의 `open_capture()` 로 받아 `cv2.VideoWriter`(mp4v)로 저장합니다 (`lab/record_clip.py`). 화면 출력에는 `mask()` 로 계정을 가립니다.
 - **재발 방지**: 녹화·변환처럼 장비 ffmpeg 빌드에 따라 달라지는 일은 venv 안의 OpenCV·PyAV 로 처리합니다. 실제 카메라 녹화 결과(받은 fps, 해상도)는 연결 시험 후 이 항목에 붙입니다.
 
 ### 6. 계정 가리기(`mask()`)가 비밀번호를 가리지 못함 (2026-10-23, 2호기)
