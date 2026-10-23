@@ -1,6 +1,6 @@
 """10-2 카메라 위치 보정: 웹에서 두 카메라 스냅샷 위의 기준점을 클릭 → solvePnP로 카메라 위치·방향 계산
 기준점 실제 좌표는 calib/world_points.json에 미리 적어 둔다 ("check": true 인 점은 계산에 쓰지 않고 검증에만 사용)
-사용법: python calib_extrinsics.py --cams rtsp://... http://<1호기>:8090/stream.mjpg  →  브라우저에서 http://<2호기>:8000
+사용법: python calib_extrinsics.py --cams rtsp://... http://<1호기>:8091/stream.mjpg  →  브라우저에서 http://<2호기>:8000
 자료와 다른 점: --cams 에 장치 번호 대신 영상 주소를 받는다. 보정 파일은 순서대로 cam0, cam1 이다.
 """
 import argparse, json, os, time
