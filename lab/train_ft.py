@@ -27,7 +27,7 @@ from sentence_transformers.sentence_transformer.training_args import BatchSample
 from bench import REPO, Recorder
 from eval_ir import DATA, build_evaluator
 
-OUT = REPO / "models" / "eg2-classroom"
+OUT = REPO / "models" / os.environ.get("OUT_NAME", "eg2-classroom")   # epoch 비교 때 이름을 바꿔 덮어쓰지 않게
 BATCH = int(os.environ.get("BATCH", 8))
 GRAD_ACC = int(os.environ.get("GRAD_ACC", 2))
 EPOCHS = float(os.environ.get("EPOCHS", 3))
