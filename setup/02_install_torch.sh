@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 # 1단계 5번: 실습용 venv(~/eg2) 생성 + JetPack 에 맞는 GPU 용 PyTorch 설치 + 실제 GPU 커널 검증.
-# sudo 는 apt 패키지 설치에만 쓴다. 이미 venv 가 있으면 그대로 재사용한다.
+# sudo 는 빠진 apt 패키지가 있을 때만 쓴다. 이미 venv 가 있으면 그대로 재사용한다.
 set -euo pipefail
 
 VENV="${EG2_VENV:-$HOME/eg2}"
 L4T=$(head -n1 /etc/nv_tegra_release | sed -n 's/^# R\([0-9]*\).*/\1/p')
 
-sudo apt install -y python3-venv python3-pip ffmpeg libsndfile1 libopenblas-dev
+# 이미 깔려 있으면 sudo 를 쓰지 않는다 (sudo 권한이 없는 개인 계정에서도 돌게)
+PKGS="python3-venv python3-pip ffmpeg libsndfile1 libopenblas-dev"
+MISSING=$(for p in $PKGS; do dpkg -s "$p" >/dev/null 2>&1 || echo "$p"; done)
+if [ -n "$MISSING" ]; then
+  echo "설치 필요: $MISSING (관리자 계정이 아니면 관리자에게 요청)"
+  # shellcheck disable=SC2086
+  sudo apt install -y $MISSING
+fi
 
 [ -d "$VENV" ] || python3 -m venv "$VENV"
 # shellcheck disable=SC1091
