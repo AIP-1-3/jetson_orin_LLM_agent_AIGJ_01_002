@@ -1,7 +1,7 @@
 """10-1 렌즈 보정: 체커보드를 여러 각도로 비추면 자동으로 20장을 모아 K(내부 행렬), dist(왜곡)를 저장
 화면이 없어도 동작한다 (진행 상황은 터미널, 마지막 검출 이미지는 calib/camN_last.jpg)
 사용법: python calib_intrinsics.py --name cam0 --src rtsp://...   (2호기 VIGI)
-        python calib_intrinsics.py --name cam1 --src http://<1호기>:8090/stream.mjpg   (1호기 USB, cam_server.py)
+        python calib_intrinsics.py --name cam1 --src http://<1호기>:8091/stream.mjpg   (1호기 USB, cam_server.py)
 자료와 다른 점: 장치 번호 대신 영상 주소(--src)를 받고, 결과 파일 이름은 --name 으로 정한다.
 IP 카메라는 해상도를 바꿀 수 없어 실제 프레임 크기를 그대로 저장한다 (VIGI 보조 스트림 848x480).
 """

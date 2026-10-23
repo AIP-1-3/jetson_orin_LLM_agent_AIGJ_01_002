@@ -406,6 +406,13 @@ cd lab && python pose_app.py --raw --seconds 120
 
   한팔들기 → 손흔들기 순서의 쌍은 팔을 든 뒤 흔들기 시작하는 정상 전환이라 남는 것이 맞습니다. 깜빡임에 해당하는 되돌아감은 5 → 1 로 줄었고, 남은 1개(37.1 → 38.1 초)는 정확히 유지 시간 1초 경계에서 생겼습니다.
 
+### 14. 10단계에서 2호기가 1호기를 찾지 못함 (2026-10-23, 1·2호기, 해결)
+
+- **증상**: 2호기의 `tailscale status` 에 1호기(aip-1-3)가 없고 `tailscale ping 100.108.186.17` 이 `no matching peer` 였습니다. 1호기 목록에도 2호기가 없었습니다. 맥북에서는 두 장비 모두 접속됐습니다.
+- **원인**: 두 장비는 같은 tailnet 에 있었지만, 팀 접근 규칙이 "팀원 → tag:jetson" 만 허용하고 "tag:jetson → tag:jetson" 규칙이 없었습니다. Tailscale 은 허용 규칙이 없는 기기끼리는 서로 목록에서 숨깁니다. 처음에는 계정이 다르다고 보고 기기 공유를 시도했지만, 같은 tailnet 이라 초대 수락이 실패했습니다. 계정 확인에 쓴 `grep -m1 LoginName` 은 tailnet 의 첫 번째 사용자를 보여 줄 뿐이라 판단을 잘못 이끌었고, `CurrentTailnet.Name` 으로 다시 확인했습니다.
+- **해결**: 관리 화면에서 `tag:jetson → tag:jetson` 규칙을 추가했습니다. 바로 2호기에 1호기가 보였고 `tailscale ping` 은 DERP(도쿄) 중계로 92~103 ms 였습니다. 2호기는 휴대폰 핫스팟, 1호기는 학교망이라 직접 연결은 맺어지지 않았습니다.
+- **함께 고친 것**: 1호기 8090 포트는 다른 프로젝트의 센서 수집 서버가 이미 쓰고 있었습니다. 10단계 영상 서버(`prox/cam_server.py`)는 8091 로 옮기고, 접근 규칙도 그 포트만 열도록 바꿨습니다.
+
 ## 진행 기록
 
 | 날짜 | 한 일 | 근거 |
@@ -429,7 +436,8 @@ cd lab && python pose_app.py --raw --seconds 120
 | 2026-10-23 | 7단계 1 epoch 비교(acc@1 0.850 유지, 학습 74.8 초), 세 모델 일반 성능 24/24·21/24·21/24 | [PR #19](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/19) |
 | 2026-10-23 | 8단계 2호기 실행(yolo 11.8 fps, relabel 이 tv → monitor 교정), 종료 시 exit 134 수정 | [PR #20](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/20), 문제 해결 기록 12 |
 | 2026-10-23 | 8단계 yoloe(12.7 fps, 크롭 0), 9단계 자세 2회(13.6~13.8 fps, 손흔들기 23), 손 흔들기 깜빡임 수정, 대용량 모델 파일 git 제외 | [PR #21](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/21), 문제 해결 기록 13 |
-| 2026-10-23 | 9단계 재측정(만세 5, 깜빡임 되돌아감 5 → 1), 8단계 물건 배치 재측정(4종 11개, teddy bear → mouse) | 이 PR |
+| 2026-10-23 | 9단계 재측정(만세 5, 깜빡임 되돌아감 5 → 1), 8단계 물건 배치 재측정(4종 11개, teddy bear → mouse) | [PR #22](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/22) |
+| 2026-10-23 | 10단계 1·2호기 Tailscale 연결(접근 규칙 추가), 영상 서버 포트 8091 로 변경 | 이 PR, 문제 해결 기록 14 |
 
 ## AI 활용과 검증
 
