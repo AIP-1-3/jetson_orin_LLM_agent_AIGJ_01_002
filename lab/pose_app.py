@@ -37,6 +37,7 @@ MODE = "raw" if args.raw else "smooth"
 W, H = 1280, 720
 SMOOTH_S = 0.6        # 다수결 창(초)
 WAVE_S = 1.5          # 손 흔들기 판정 창(초)
+WAVE_HOLD_S = 1.0     # 손 흔들기를 한 번 잡으면 이 시간 동안 유지 (흔들기 방향 전환 사이에 한팔들기로 깜빡이는 것 방지)
 BEH_WIN = 15.0        # 행동 패턴 판정 창(초)
 FACE_TH = 0.6         # 정면으로 볼 facing 점수
 LOOK_S, INTEREST_S, LINGER_S = 1.0, 3.0, 10.0
@@ -199,6 +200,8 @@ def update_person(tid, k, now):
         label = v if frac >= 0.6 else st["label"]
         recent = [(t, x) for t, x in st["wave"] if now - t <= WAVE_S]
         if label == "한팔들기" and is_wave(recent):
+            st["wave_t"] = now
+        if label == "한팔들기" and now - st.get("wave_t", float("-inf")) <= WAVE_HOLD_S:
             label = "손흔들기"
 
     # ---- 학습 모델 (5프레임마다) ----

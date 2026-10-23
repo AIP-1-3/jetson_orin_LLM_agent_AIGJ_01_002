@@ -10,8 +10,8 @@ PIN="$VENV/torch-pin.txt"
 source "$VENV/bin/activate"
 
 # torch 가 PyPI 의 일반 aarch64 판(GPU 미지원)으로 바뀌지 않도록 버전을 고정한다
-# lap: 추적(track)에 필요. 빠지면 ultralytics 가 첫 실행 중에 자동 설치(AutoUpdate)한다
-pip install -c "$PIN" ultralytics lap fastapi "uvicorn[standard]"
+# lap(추적), clip·ftfy(yoloe 문장 프롬프트): 빠지면 ultralytics 가 첫 실행 중에 자동 설치(AutoUpdate)한다
+pip install -c "$PIN" ultralytics lap ftfy "git+https://github.com/ultralytics/CLIP.git" fastapi "uvicorn[standard]"
 
 # ultralytics 는 opencv-python(GUI 판)을 끌어온다. 이미 쓰는 opencv-python-headless 와
 # 같은 cv2 폴더를 덮어써 둘 중 하나가 깨지므로, GUI 판을 지우고 headless 판을 다시 깐다.
