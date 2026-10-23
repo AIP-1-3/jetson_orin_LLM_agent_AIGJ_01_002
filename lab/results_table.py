@@ -26,17 +26,28 @@ def tegrastats_summary(step):
     logs = sorted((RESULTS / "logs").glob(f"{step}_*.log"))
     if not logs:
         return None
-    ram, gpu = [], []
+    ram, gpu, power = [], [], []
     for line in logs[-1].read_text(errors="ignore").splitlines():
         if m := re.search(r"RAM (\d+)/\d+MB", line):
             ram.append(int(m.group(1)))
         if m := re.search(r"GR3D_FREQ (\d+)%", line):
             gpu.append(int(m.group(1)))
+        if m := re.search(r"VDD_IN (\d+)mW", line):   # 보드 전체 입력 전력(현재값)
+            power.append(int(m.group(1)))
     if not ram:
         return None
     return {"log": logs[-1].relative_to(REPO).as_posix(), "ram_max": max(ram),
             "gpu_avg": round(sum(gpu) / len(gpu)) if gpu else None,
-            "gpu_max": max(gpu) if gpu else None}
+            "gpu_max": max(gpu) if gpu else None,
+            "power_avg": round(sum(power) / len(power)) if power else None,
+            "power_max": max(power) if power else None}
+
+
+def _latency(m, row):
+    """반복 측정(--sustain)은 구간 전체 시간이라 지연 대신 처리량을 보여 준다."""
+    if "seconds" in m and "throughput_qps" in row:
+        return f"처리량 {row['throughput_qps']} 질의/초 ({m['seconds']:.0f}초)"
+    return m["ms"]
 
 
 def main():
@@ -44,8 +55,8 @@ def main():
     ap.add_argument("--all", action="store_true")
     args = ap.parse_args()
 
-    print("| 구성 | 입력 | 실행 전 RAM (MB) | 로드 후 RAM (MB) | 모델 증가분 (MB) | 최대 RAM (MB) | 지연 (ms) | GPU 사용률 평균/최대 (%) | 정답 | 커밋 |")
-    print("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+    print("| 구성 | 입력 | 실행 전 RAM (MB) | 로드 후 RAM (MB) | 모델 증가분 (MB) | 최대 RAM (MB) | 지연 (ms) | GPU 사용률 평균/최대 (%) | 전력 평균/최대 (mW) | 정답 | 커밋 |")
+    print("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
     cond = None
     for step in STEPS:
         rows = load_rows(step)
@@ -57,15 +68,16 @@ def main():
             total = len(r["checks"])
             gpu = f"{ts['gpu_avg']}/{ts['gpu_max']}" if ts and ts["gpu_avg"] is not None else "-"
             peak = ts["ram_max"] if ts else r["ram_peak_mb"]
+            pw = f"{ts['power_avg']}/{ts['power_max']}" if ts and ts["power_avg"] is not None else "-"
             before, after = r["ram_before_load_mb"], r.get("ram_after_load_mb")
             delta = after - before if after is not None else "-"
             for name, ms in r["measures"].items():
                 print(f"| {r['config']} | {name} | {before} | {after if after is not None else '-'} | {delta} | {peak} | "
-                      f"{ms[-1]['ms']} | {gpu} | {ok}/{total} | {cond['commit']} |")
+                      f"{_latency(ms[-1], r)} | {gpu} | {pw} | {ok}/{total} | {cond['commit']} |")
     if cond:
         print(f"\n측정 조건: {cond['device']}, {cond['power_mode']}, {cond['l4t']}, "
               f"torch {cond['torch']}, sentence-transformers {cond['sentence_transformers']}, bfloat16")
-        print("RAM 은 시스템 전체 사용량(MemTotal - MemAvailable). 다른 프로세스가 쓰는 양이 섞이므로 모델 몫은 '모델 증가분'(로드 후 - 실행 전)으로 본다. tegrastats 로그가 있으면 최대 RAM 은 로그 값.")
+        print("RAM 은 시스템 전체 사용량(MemTotal - MemAvailable). 다른 프로세스가 쓰는 양이 섞이므로 모델 몫은 '모델 증가분'(로드 후 - 실행 전)으로 본다. tegrastats 로그가 있으면 최대 RAM·GPU·전력은 로그 전체 구간(모델 로드 포함) 값.")
     else:
         print("\n측정 기록이 없습니다. lab/test_*.py 를 먼저 실행하세요.")
 
