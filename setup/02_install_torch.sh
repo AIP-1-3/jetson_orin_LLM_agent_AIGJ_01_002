@@ -10,9 +10,16 @@ L4T=$(head -n1 /etc/nv_tegra_release | sed -n 's/^# R\([0-9]*\).*/\1/p')
 PKGS="python3-venv python3-pip ffmpeg libsndfile1 libopenblas-dev"
 MISSING=$(for p in $PKGS; do dpkg -s "$p" >/dev/null 2>&1 || echo "$p"; done)
 if [ -n "$MISSING" ]; then
-  echo "설치 필요: $MISSING (관리자 계정이 아니면 관리자에게 요청)"
-  # shellcheck disable=SC2086
-  sudo apt install -y $MISSING
+  MISSING=$(echo $MISSING)   # 줄바꿈을 공백으로
+  if [ -t 0 ] || sudo -n true 2>/dev/null; then
+    # shellcheck disable=SC2086
+    sudo apt install -y $MISSING
+  else
+    # 비대화식(원격 실행 등)에서는 sudo 비밀번호를 받을 수 없다. 멈춘 이유와 할 일을 남기고 끝낸다
+    echo "빠진 패키지: $MISSING" >&2
+    echo "관리자 계정 터미널에서 먼저 실행: sudo apt install -y $MISSING" >&2
+    exit 1
+  fi
 fi
 
 [ -d "$VENV" ] || python3 -m venv "$VENV"
