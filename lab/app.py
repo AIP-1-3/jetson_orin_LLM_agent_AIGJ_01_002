@@ -18,6 +18,7 @@
 import argparse
 import collections
 import os
+import sys
 import threading
 import time
 
@@ -284,3 +285,7 @@ if __name__ == "__main__":
     finally:
         finish()
         cam.close()
+        # 데몬 스레드(검출·임베딩)가 CUDA 작업 중인 채로 인터프리터가 정리되면
+        # "terminate called without an active exception" 으로 abort(exit 134)한다. 기록은 끝났으니 바로 끝낸다.
+        sys.stdout.flush()
+        os._exit(0)

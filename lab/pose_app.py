@@ -6,7 +6,7 @@
 - --seconds N: N초 뒤 끝내고 fps·동작별 횟수·행동 집계를 results/09_pose.jsonl 에 남긴다.
 사람 이미지는 저장하지 않는다. 남기는 것은 동작 기록과 (--record 일 때) 정규화된 관절 좌표뿐이다.
 """
-import time, threading, collections, argparse, csv
+import os, sys, time, threading, collections, argparse, csv
 import cv2, numpy as np, uvicorn
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, StreamingResponse
@@ -373,3 +373,7 @@ if __name__ == "__main__":
     finally:
         finish()
         cam.close()
+        # 데몬 스레드(검출·임베딩)가 CUDA 작업 중인 채로 인터프리터가 정리되면
+        # "terminate called without an active exception" 으로 abort(exit 134)한다. 기록은 끝났으니 바로 끝낸다.
+        sys.stdout.flush()
+        os._exit(0)
