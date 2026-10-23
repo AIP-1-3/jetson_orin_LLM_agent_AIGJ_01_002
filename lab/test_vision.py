@@ -1,6 +1,6 @@
 """4단계 영상 테스트: 텍스트 질의로 이미지·동영상 찾기.
 
-자료(media/)는 scripts/record_clip.sh 로 IP 카메라에서 만들거나 직접 복사한다.
+자료(media/)는 scripts/record_clip.sh(OpenCV 녹화)로 IP 카메라에서 만들거나 직접 복사한다.
 정답 확인은 사람이 상위 3개 이미지를 눈으로 보고 판단한다. 판정은 --judge 로 남길 수 있다.
 """
 import argparse
