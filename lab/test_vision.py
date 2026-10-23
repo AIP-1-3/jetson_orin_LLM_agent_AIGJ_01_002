@@ -10,6 +10,8 @@ from bench import Recorder, media_dir
 from eg2 import config_name, load
 
 QUERIES = ["사람이 없는 빈 강의실", "학생들이 앉아 수업을 듣는 모습", "화이트보드에 쓴 글씨"]
+# 이미지 10장을 한 묶음으로 넣으면 2호기 RAM 이 97%(7262/7485 MB)까지 찼다. 4장씩 나눠 넣는다.
+IMAGE_BATCH = 4
 
 
 def main():
@@ -31,8 +33,8 @@ def main():
 
     inputs = [{"image": p} for p in images]
     model.encode(inputs[:1], normalize_embeddings=True)   # 데우기
-    with rec.time(f"이미지 {len(images)}장", n=len(images)):
-        img_emb = model.encode(inputs, normalize_embeddings=True)
+    with rec.time(f"이미지 {len(images)}장", n=len(images), batch=IMAGE_BATCH):
+        img_emb = model.encode(inputs, batch_size=IMAGE_BATCH, normalize_embeddings=True)
 
     q = model.encode(QUERIES, prompt_name="SearchQuery", normalize_embeddings=True)
     sim = q @ img_emb.T
