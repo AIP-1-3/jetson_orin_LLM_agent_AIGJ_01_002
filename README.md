@@ -128,9 +128,9 @@ python results_table.py
 
 출력된 표를 아래에 붙여 넣습니다. 숫자는 `results/` 파일에서만 가져옵니다.
 
-| 구성 | 입력 | 로드 후 RAM (MB) | 최대 RAM (MB) | 지연 (ms) | GPU 사용률 평균/최대 (%) | 정답 | 커밋 |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 측정 전 | | | | | | | |
+| 구성 | 입력 | 실행 전 RAM (MB) | 로드 후 RAM (MB) | 모델 증가분 (MB) | 최대 RAM (MB) | 지연 (ms) | GPU 사용률 평균/최대 (%) | 정답 | 커밋 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 측정 결과 커밋 후 채움 | | | | | | | | | |
 
 측정 조건: 전력 모드, L4T, torch·sentence-transformers 버전, 정밀도(bfloat16)는 표 아래에 자동 출력됩니다.
 
@@ -166,7 +166,8 @@ python results_table.py
 | --- | --- | --- |
 | 2026-10-23 | 강의자료 정리, 장비 차이 분석 | [PR #1](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/1) |
 | 2026-10-23 | 1~6단계 설치·테스트·측정 코드 (장비 실행 전) | [PR #2](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/2) |
-| 2026-10-23 | 2호기 첫 실행: 환경 점검 통과, torch 설치에서 sudo 로 멈춤 → 스크립트 보강 | 이 PR, 문제 해결 기록 1 |
+| 2026-10-23 | 2호기 첫 실행: 환경 점검 통과, torch 설치에서 sudo 로 멈춤 → 스크립트 보강 | [PR #4](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/4), 문제 해결 기록 1 |
+| 2026-10-23 | 2호기 1~3단계 완료 (torch 2.14.1+cu132, 텍스트 검색 6/6 정답). 다른 프로세스 RAM 이 섞여 모델 증가분 열 추가, tegrastats 를 sudo 없이도 기록 | 이 PR |
 
 ## AI 활용과 검증
 
