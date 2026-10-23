@@ -18,12 +18,20 @@ case "${L4T:-0}" in
   *) echo "-> 판별 실패: /etc/nv_tegra_release 를 확인하세요" ;;
 esac
 
+echo "== apt 패키지 (02_install_torch.sh 에 필요) =="
+MISSING=$(for p in python3-venv python3-pip ffmpeg libsndfile1 libopenblas-dev; do dpkg -s "$p" >/dev/null 2>&1 || echo "$p"; done)
+if [ -n "$MISSING" ]; then
+  echo "-> 빠짐: $(echo $MISSING). 관리자 계정에서: sudo apt install -y $(echo $MISSING)"
+else
+  echo "-> 모두 설치됨"
+fi
+
 echo "== CUDA =="
 if [ -x /usr/local/cuda/bin/nvcc ]; then
   /usr/local/cuda/bin/nvcc --version | tail -n1
   command -v nvcc >/dev/null || echo "주의: nvcc 가 PATH 에 없음 (자료 Q5). torch 는 nvcc 없이도 동작"
 else
-  echo "/usr/local/cuda 없음: sudo apt install nvidia-jetpack 필요할 수 있음"
+  echo "/usr/local/cuda 없음 (CUDA 툴킷·cuDNN·TensorRT 미설치). torch cu132 휠은 런타임을 같이 받아 동작 가능. TensorRT 가 필요하면 관리자 계정에서: sudo apt install -y nvidia-jetpack"
 fi
 
 echo "== 디스크 =="
