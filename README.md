@@ -212,6 +212,18 @@ cd lab && python pose_app.py --raw --seconds 120
 
 브라우저에서 `http://<2호기 Tailscale 주소>:8000` 으로 실시간 영상과 검색 화면을 봅니다. 사람은 크롭·저장하지 않습니다(8단계 `SKIP_CLASSES`). 9단계는 관절 좌표만 다룹니다.
 
+### 7단계 도메인 미세 조정
+
+강의실 운영 질의-문서 쌍으로 텍스트 모델(270M)을 추가 학습하고, 학습 전후 검색 정확도를 비교합니다. 데이터는 [data/README.md](data/README.md) 에 있습니다. 학습 282쌍, 평가 60쌍이고 서로 겹치지 않습니다. 평가는 `lab/eval_ir.py` 로 했고, 근거는 [`results/07_finetune.jsonl`](results/07_finetune.jsonl) 입니다.
+
+| 모델 | accuracy@1 | accuracy@3 | accuracy@5 | ndcg@10 | mrr@10 | 학습 시간 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 기준 (google/embeddinggemma-2) | 0.833 | 0.967 | 0.983 | 0.923 | 0.898 | - |
+| 미세 조정 (eg2-classroom) | 진행 중 | | | | | |
+
+- 기준 모델이 이미 질의 60개 중 50개를 1위로 맞혔습니다. 남은 개선 폭은 accuracy@1 쪽입니다.
+- 자료 기본값으로는 학습이 메모리 부족으로 실패했습니다. 원인과 대응은 문제 해결 기록 11 에 있습니다.
+
 ## 기술적 판단
 
 | 무엇 | 왜 (대안과 버린 이유) | 어떻게 |
@@ -314,6 +326,18 @@ cd lab && python pose_app.py --raw --seconds 120
 - **원인**: 통합 메모리라 이미지 인코더의 중간 텐서가 시스템 RAM 을 그대로 씁니다. 데스크톱 세션이 이미 약 4.7 GB 를 쓰고 있어 여유가 적었습니다.
 - **해결**: `test_vision.py` 에 `IMAGE_BATCH = 4` 를 두고 `batch_size=IMAGE_BATCH` 로 나눠 넣습니다([PR #11](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/11)). 측정 기록에도 묶음 크기를 남깁니다. 4장씩 나눠 넣은 뒤 6장 측정의 최대 RAM 은 6489 MB(87%), torch 최대 할당 1156 MB 였습니다([`04_vision_20261023-160530.log`](results/logs/04_vision_20261023-160530.log)). 장수가 달라 직접 비교는 아니지만, 장당 시간은 약 0.5~0.57 초로 그대로입니다.
 
+### 11. 7단계 미세 조정이 첫 step 에서 메모리 부족 (2026-10-23, 2호기)
+
+- **증상**: `train_ft.py` 를 자료 기본값(배치 8×누적 2)으로 돌리자 시작 26초 만에 실패했습니다. 오류는 `torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 256.00 MiB ... 152.73 MiB is free` 이고, 그 앞에 `NvMapMemAllocInternalTagged failed: error 12` 가 찍혔습니다. 자료가 권하는 배치 4×누적 4 로 바꿔도 첫 `loss.backward` 에서 같은 오류가 났습니다. 두 번 모두 tegrastats RAM 이 7195~7237/7485 MB(96~97%)까지 찼습니다.
+- **원인**:
+  - 학습 전부터 약 4.3 GB 가 쓰이고 있었습니다. Firefox 약 0.9 GB, gnome-shell 0.33 GB, 시스템 모니터 0.23 GB, Xorg 0.21 GB 등입니다. 그래서 학습에 남은 메모리가 약 3 GB 였습니다.
+  - 모델 파라미터의 절반 이상이 토큰 임베딩 표(어휘 약 26만 개)입니다. 이 표까지 학습하면 표 크기만큼 기울기와 옵티마이저 상태가 더 생깁니다.
+- **해결 시도**: 배치를 더 줄이면 MultipleNegativesRankingLoss 의 오답 수도 줄어 학습 효과가 작아집니다(자료 확인 포인트). 그래서 배치는 그대로 두고 메모리가 큰 쪽을 줄였습니다.
+  - `FREEZE_EMB=1`: 토큰 임베딩 표를 고정합니다. 도메인 문장의 단어는 이미 어휘에 있어 표를 고칠 필요가 작습니다.
+  - `MAX_LEN=128`: 학습 문장의 최대 길이를 줄입니다.
+  - `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`: 메모리 단편화를 줄입니다. 오류 메시지가 권하는 설정입니다.
+  - 결과는 아래 7단계 절에 적습니다.
+
 ## 진행 기록
 
 | 날짜 | 한 일 | 근거 |
@@ -331,7 +355,8 @@ cd lab && python pose_app.py --raw --seconds 120
 | 2026-10-23 | 4단계 3차 측정(10장 5.9 초, RAM 97%) 결과와 로그 커밋 | [PR #12](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/12), 문제 해결 기록 10 |
 | 2026-10-23 | 이미지 정답을 장면 파일 이름으로 자동 판정 | [PR #13](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/13) |
 | 2026-10-23 | 장면별 6장 측정(1/3 정답, 4장씩 넣어 최대 RAM 87%), 7단계 학습·평가 데이터(AI 작성) | [PR #14](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/14), [data/README.md](data/README.md) |
-| 2026-10-23 | 묶음 크기 실험(묶음 32 에서 처리량 22배), 8·9단계 코드를 IP 카메라용으로 작성 (장비 실행 전) | 이 PR, 묶음 크기 실험 표 |
+| 2026-10-23 | 묶음 크기 실험(묶음 32 에서 처리량 22배), 8·9단계 코드를 IP 카메라용으로 작성 (장비 실행 전) | [PR #15](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/15), 묶음 크기 실험 표 |
+| 2026-10-23 | 7단계 기준 평가(acc@1 0.833), 학습 OOM 2회 → 임베딩 표 고정·길이 제한 추가 | 이 PR, 문제 해결 기록 11 |
 
 ## AI 활용과 검증
 
