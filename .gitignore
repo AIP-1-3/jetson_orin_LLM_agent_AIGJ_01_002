@@ -18,6 +18,7 @@ venv/
 models/
 runs/
 outputs/
+# 측정 결과(results/)와 tegrastats 로그는 보고서 근거라서 올린다
 
 # 미디어 (카메라 녹화·크롭에 사람이 찍힐 수 있음)
 media/
@@ -27,6 +28,7 @@ media/
 # 비밀 값 (RTSP 주소·카메라 계정, HF 토큰)
 .env
 .env.*
+!.env.example
 .claude/settings.local.json
 
 # OS/에디터
