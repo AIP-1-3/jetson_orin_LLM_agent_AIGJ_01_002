@@ -1,8 +1,11 @@
 """3단계 텍스트 테스트: 한국어 질의가 맞는 문서를 1위로 찾는지, 차원(768/256/128)별 지연과 점수.
 
 --no-prompt 로 실행하면 SearchQuery/Document 프롬프트 없이 같은 비교를 한다 (자료의 변형 과제).
+--sustain 초 를 주면 dim=768 질의를 그 시간 동안 반복해 처리량(질의/초)을 잰다.
+한 번 추론은 약 150 ms 라서 1초 간격 tegrastats 에 GPU 사용률이 거의 잡히지 않기 때문이다.
 """
 import argparse
+import time
 
 from bench import Recorder
 from eg2 import config_name, load
@@ -20,6 +23,8 @@ QUERIES = [("수업 중에 졸리고 머리가 맑지 않아요", 0), ("여름�
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-prompt", action="store_true", help="프롬프트 없이 인코딩 (변형 과제)")
+    ap.add_argument("--sustain", type=float, default=0, metavar="초",
+                    help="dim=768 질의를 이 시간 동안 반복해 처리량 측정 (tegrastats 로 GPU 사용률 확인용)")
     args = ap.parse_args()
     qp, dp = (None, None) if args.no_prompt else ("SearchQuery", "Document")
 
@@ -43,6 +48,15 @@ def main():
             best = int(row.argmax())
             rec.check(f"dim={dim} '{qi}'", best == answer,
                       f"-> {DOCS[best][:20]}... ({row[best]:.3f}, 정답 점수 {row[answer]:.3f})")
+    if args.sustain > 0:
+        n, t0 = 0, time.perf_counter()
+        with rec.time(f"반복 {args.sustain:.0f}초 dim=768", seconds=args.sustain):
+            while time.perf_counter() - t0 < args.sustain:
+                model.encode(queries, prompt_name=qp, normalize_embeddings=True)
+                n += len(queries)
+        qps = n / (time.perf_counter() - t0)
+        rec.row["throughput_qps"] = round(qps, 1)
+        print(f"  처리량 {qps:.1f} 질의/초 ({n}개)")
     rec.save()
 
 
