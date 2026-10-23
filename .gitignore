@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# 모델 가중치·엔진 (용량 큼, git 에 올리지 않음)
+*.pt
+*.pth
+*.onnx
+*.engine
+*.trt
+*.safetensors
+*.gguf
+models/
+runs/
+outputs/
+
+# 미디어 (카메라 녹화·크롭에 사람이 찍힐 수 있음)
+media/
+*.mp4
+*.wav
+
+# 비밀 값 (RTSP 주소·카메라 계정, HF 토큰)
+.env
+.env.*
+.claude/settings.local.json
+
+# OS/에디터
+.DS_Store
+.vscode/
+.idea/
