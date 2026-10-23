@@ -35,11 +35,15 @@ def default_source():
 
 
 def mask(source):
-    """로그에 RTSP 계정이 찍히지 않게 가린다."""
+    """로그에 RTSP 계정이 찍히지 않게 가린다.
+
+    계정과 주소는 마지막 "@" 로 나눈다. 사용자 이름이 이메일처럼 "@" 를 품고 있으면
+    첫 "@" 로 나눌 때 비밀번호가 그대로 찍혔다 (README 문제 해결 기록 6).
+    """
     s = str(source)
     if "@" in s and "://" in s:
         scheme, rest = s.split("://", 1)
-        return f"{scheme}://***@{rest.split('@', 1)[1]}"
+        return f"{scheme}://***@{rest.rsplit('@', 1)[1]}"
     return s
 
 
