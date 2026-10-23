@@ -328,10 +328,10 @@ cd lab && python pose_app.py --raw --seconds 120
 
 ### 11. 7단계 미세 조정이 첫 step 에서 메모리 부족 (2026-10-23, 2호기)
 
-- **증상**: `train_ft.py` 를 자료 기본값(배치 8×누적 2)으로 돌리자 시작 26초 만에 실패했습니다. 오류는 `torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 256.00 MiB ... 152.73 MiB is free` 이고, 그 앞에 `NvMapMemAllocInternalTagged failed: error 12` 가 찍혔습니다. 자료가 권하는 배치 4×누적 4 로 바꿔도 첫 `loss.backward` 에서 같은 오류가 났습니다. 두 번 모두 tegrastats RAM 이 7195~7237/7485 MB(96~97%)까지 찼습니다.
+- **증상**: `train_ft.py` 를 자료 기본값(배치 8×누적 2)으로 돌리자 첫 step(1/54, 7.6초)은 끝났지만 두 번째 step 의 `loss.backward` 에서 실패했습니다. 오류는 `torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 256.00 MiB ... 152.73 MiB is free` 이고, 그 앞에 `NvMapMemAllocInternalTagged failed: error 12` 가 찍혔습니다. 자료가 권하는 배치 4×누적 4 로 바꿔도 같은 지점(1/54 뒤)에서 같은 오류가 났습니다. 두 번 모두 tegrastats RAM 이 7195~7237/7485 MB(96~97%)까지 찼습니다([`07_finetune_20261023-161440.log`](results/logs/07_finetune_20261023-161440.log)).
 - **원인**:
   - 학습 전부터 약 4.3 GB 가 쓰이고 있었습니다. Firefox 약 0.9 GB, gnome-shell 0.33 GB, 시스템 모니터 0.23 GB, Xorg 0.21 GB 등입니다. 그래서 학습에 남은 메모리가 약 3 GB 였습니다.
-  - 모델 파라미터의 절반 이상이 토큰 임베딩 표(어휘 약 26만 개)입니다. 이 표까지 학습하면 표 크기만큼 기울기와 옵티마이저 상태가 더 생깁니다.
+  - 모델 파라미터 271.0M 중 134.2M(49.5%)이 토큰 임베딩 표입니다. 이 표까지 학습하면 그만큼 기울기와 옵티마이저 상태가 더 생깁니다(파라미터 수는 재학습 로그의 출력).
 - **해결 시도**: 배치를 더 줄이면 MultipleNegativesRankingLoss 의 오답 수도 줄어 학습 효과가 작아집니다(자료 확인 포인트). 그래서 배치는 그대로 두고 메모리가 큰 쪽을 줄였습니다.
   - `FREEZE_EMB=1`: 토큰 임베딩 표를 고정합니다. 도메인 문장의 단어는 이미 어휘에 있어 표를 고칠 필요가 작습니다.
   - `MAX_LEN=128`: 학습 문장의 최대 길이를 줄입니다.

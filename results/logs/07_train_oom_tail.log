@@ -1,0 +1,23 @@
+# 7단계 학습 실패 2회의 Traceback 마지막 부분 (2호기 results/logs/07_train_oom.log, 07_train_oom2.log 에서 발췌)
+# 1차: BATCH=8 GRAD_ACC=2, 16:15:04 시작 / 2차: BATCH=4 GRAD_ACC=4, 16:15:33 시작. 둘 다 1/54 step 뒤 두 번째 step 의 backward 에서 실패.
+
+## 1차 (배치 8x2)
+NvMapMemAllocInternalTagged failed: error 12
+NvMapMemHandleAlloc failed: error 12
+[W1023 16:15:30 CUDACachingAllocator.cpp:3934] memory allocation failed with OOM on device 0 while trying to allocate 268435456 bytes (free: 160149504, total: 7849115648).
+  File ".../transformers/trainer.py", line 2098, in training_step
+    self.accelerator.backward(loss, **kwargs)
+  File ".../accelerate/accelerator.py", line 2861, in backward
+    loss.backward(**kwargs)
+  File ".../torch/autograd/graph.py", line 1072, in _engine_run_backward
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 256.00 MiB. GPU 0 has a total capacity of 7.31 GiB of which 152.73 MiB is free. Of the allocated memory 1.81 GiB is allocated by PyTorch, and 257.99 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.
+  2%|▏         | 1/54 [00:07<06:43,  7.62s/it]
+
+## 2차 (배치 4x4)
+  File ".../transformers/trainer.py", line 2098, in training_step
+    self.accelerator.backward(loss, **kwargs)
+  File ".../accelerate/accelerator.py", line 2861, in backward
+    loss.backward(**kwargs)
+  File ".../torch/autograd/graph.py", line 1072, in _engine_run_backward
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 256.00 MiB. GPU 0 has a total capacity of 7.31 GiB of which 149.17 MiB is free. Of the allocated memory 2.04 GiB is allocated by PyTorch, and 282.99 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.
+  2%|▏         | 1/54 [00:11<10:12, 11.56s/it]
