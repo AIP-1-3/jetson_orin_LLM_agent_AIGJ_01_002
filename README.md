@@ -38,7 +38,8 @@ flowchart LR
 | `lab/bench.py` | 지연, 로드 전후 RAM, torch 할당량, 측정 조건(전력 모드·L4T·버전·커밋)을 `results/<단계>.jsonl` 에 추가 |
 | `lab/results_table.py` | `results/` 와 tegrastats 로그로 6단계 표를 Markdown 으로 출력 |
 | `lab/camera.py` | USB 번호와 RTSP 주소를 같은 방식으로 열고, 최신 프레임만 유지해 RTSP 지연 누적을 막음 |
-| `scripts/record_clip.sh` | IP 카메라에서 10초 녹화 + 2초마다 프레임 추출 (4단계 자료) |
+| `scripts/record_clip.sh` | IP 카메라에서 10초 녹화 + 2초마다 프레임 저장 (4단계 자료, `lab/record_clip.py` 호출) |
+| `lab/record_clip.py` | OpenCV 로 RTSP 를 받아 `clip.mp4`(mp4v)와 `frame_NN.jpg` 저장, 받은 fps 출력 |
 | `scripts/make_audio_samples.sh` | 합성 음성·경보음·잡음을 16 kHz 모노로 생성 (5단계 자료) |
 | `scripts/tegrastats_log.sh` | 측정 중 tegrastats 를 시각과 함께 `results/logs/` 에 저장 |
 
@@ -214,6 +215,13 @@ RAM 은 시스템 전체 사용량(MemTotal - MemAvailable). 다른 프로세스
 - **원인 (추정)**: espeak-ng 합성음은 사람 목소리보다 기계음에 가까워서 "목소리" 질의와 덜 닮았을 수 있습니다. 강의자료도 합성음은 점수가 낮게 나올 수 있다고 적고 있습니다. 아직 확인하지 않았습니다.
 - **확인 계획**: 사람 목소리를 녹음해 같은 질의로 비교하고, 질의 문구("사람이 말하는 소리")를 바꿔 결과가 바뀌는지 봅니다.
 
+### 5. IP 카메라 녹화를 ffmpeg 로 할 수 없음: NVIDIA 판 ffmpeg 에 RTSP·libx264 없음 (2026-10-23, 2호기)
+
+- **증상**: 강의자료 방식(`ffmpeg -rtsp_transport tcp -i rtsp://... -c:v libx264`)으로 쓴 첫 `record_clip.sh` 를 실행하기 전 점검에서, 2호기 ffmpeg 의 `-protocols` 목록에 `file`, `pipe` 만 있고 rtsp·tcp 가 없으며 인코더 목록에 libx264 가 없음을 확인
+- **원인**: 문제 해결 기록 2 와 같은 NVIDIA 판 ffmpeg(7:8.0.1-nvidia1)가 네트워크 기능을 끄고(`--disable-network`) 빌드돼 있습니다.
+- **해결**: OpenCV 는 자체 FFmpeg 라이브러리(libavformat 6.1)를 써서 RTSP 를 열 수 있으므로, `lab/camera.py` 의 `open_capture()` 로 받아 `cv2.VideoWriter`(mp4v)로 저장합니다 (`lab/record_clip.py`). 화면 출력에는 `mask()` 로 계정을 가립니다.
+- **재발 방지**: 녹화·변환처럼 장비 ffmpeg 빌드에 따라 달라지는 일은 venv 안의 OpenCV·PyAV 로 처리합니다. 실제 카메라 녹화 결과(받은 fps, 해상도)는 연결 시험 후 이 항목에 붙입니다.
+
 ## 진행 기록
 
 | 날짜 | 한 일 | 근거 |
@@ -223,7 +231,8 @@ RAM 은 시스템 전체 사용량(MemTotal - MemAvailable). 다른 프로세스
 | 2026-10-23 | 2호기 첫 실행: 환경 점검 통과, torch 설치에서 sudo 로 멈춤 → 스크립트 보강 | [PR #4](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/4), 문제 해결 기록 1 |
 | 2026-10-23 | 2호기 1~3단계 완료 (torch 2.14.1+cu132, 텍스트 검색 6/6 정답). 다른 프로세스 RAM 이 섞여 모델 증가분 열 추가, tegrastats 를 sudo 없이도 기록 | [PR #5](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/5) |
 | 2026-10-23 | 음성 샘플 생성을 파이썬으로 교체, 연속 추론 처리량 측정 추가 | [PR #6](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/6), 문제 해결 기록 2·3 |
-| 2026-10-23 | 2호기 3·5단계 측정 결과와 tegrastats 로그 커밋, 표에 전력·처리량 추가 | 이 PR, 6단계 표, 문제 해결 기록 4 |
+| 2026-10-23 | 2호기 3·5단계 측정 결과와 tegrastats 로그 커밋, 표에 전력·처리량 추가 | [PR #7](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/7), 6단계 표, 문제 해결 기록 4 |
+| 2026-10-23 | IP 카메라 녹화를 ffmpeg 에서 OpenCV 로 교체 (카메라 VIGI-C540-W 확인, 계정 입력 전) | 이 PR, 문제 해결 기록 5 |
 
 ## AI 활용과 검증
 
