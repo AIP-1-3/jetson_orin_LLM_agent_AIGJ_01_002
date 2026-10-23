@@ -1,7 +1,10 @@
 """4단계 영상 테스트: 텍스트 질의로 이미지·동영상 찾기.
 
 자료(media/)는 scripts/record_clip.sh(OpenCV 녹화)로 IP 카메라에서 만들거나 직접 복사한다.
-정답 확인은 사람이 상위 3개 이미지를 눈으로 보고 판단한다. 판정은 --judge 로 남길 수 있다.
+정답은 두 가지로 남긴다.
+- 장면별 녹화(record_clip.sh 4 empty|people|board)로 만든 파일은 이름 앞부분이 그 장면이라,
+  질의마다 1위 이미지 이름이 기대 장면으로 시작하는지 자동 판정한다. 장면 이름은 찍을 때 사람이 정했다.
+- 그 밖의 파일은 사람이 상위 3개를 눈으로 보고 --judge 로 남긴다.
 """
 import argparse
 import glob
@@ -10,6 +13,8 @@ from bench import Recorder, media_dir
 from eg2 import config_name, load
 
 QUERIES = ["사람이 없는 빈 강의실", "학생들이 앉아 수업을 듣는 모습", "화이트보드에 쓴 글씨"]
+# 질의별 기대 장면 = 장면별 녹화 파일 이름 앞부분
+EXPECTED = ["empty", "people", "board"]
 # 이미지 10장을 한 묶음으로 넣으면 2호기 RAM 이 97%(7262/7485 MB)까지 찼다. 4장씩 나눠 넣는다.
 IMAGE_BATCH = 4
 
@@ -38,11 +43,22 @@ def main():
 
     q = model.encode(QUERIES, prompt_name="SearchQuery", normalize_embeddings=True)
     sim = q @ img_emb.T
+    names = [p.split("/")[-1] for p in images]
+    # 기대 장면이 모두 찍혀 있을 때만 자동 판정한다 (일부만 있으면 정답이 없는 질의가 생긴다)
+    auto = not args.judge and all(any(n.startswith(e + "_") for n in names) for e in EXPECTED)
     for i, (qi, row) in enumerate(zip(QUERIES, sim)):
-        order = row.argsort()[::-1][:3]
-        top = [(images[j].split("/")[-1], round(float(row[j]), 3)) for j in order]
+        order = row.argsort()[::-1]
+        top = [(names[j], round(float(row[j]), 3)) for j in order[:3]]
         print(qi, "->", top)
-        if i < len(args.judge):
+        if auto:
+            # 기대 장면 최고점과 다른 장면 최고점의 차이: 양수면 맞게 구분, 클수록 여유가 큼
+            hit = [float(row[j]) for j in order if names[j].startswith(EXPECTED[i] + "_")]
+            miss = [float(row[j]) for j in order if not names[j].startswith(EXPECTED[i] + "_")]
+            margin = round(max(hit) - max(miss), 3)
+            print(f"  기대 장면 {EXPECTED[i]}: 1위 {names[order[0]]}, 차이 {margin:+.3f}")
+            rec.check(f"'{qi}' 1위", names[order[0]].startswith(EXPECTED[i] + "_"),
+                      f"{top} margin={margin:+.3f}")
+        elif i < len(args.judge):
             rec.check(f"'{qi}' 1위", args.judge[i].upper() == "Y", str(top))
 
     if not args.no_video and clip.exists():
