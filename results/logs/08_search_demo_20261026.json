@@ -1,0 +1,103 @@
+{
+ "time": "2026-10-26T17:00:53+09:00",
+ "source": "app.py --mode yoloe --seconds 0 (미리보기, 8단계 시연 중) /search?q=..&k=3",
+ "results": {
+  "세탁기": [
+   {
+    "label": "드럼 세탁기",
+    "cls": "drum washing machine",
+    "score": 0.733,
+    "lscore": 0.703,
+    "conf": 0.66
+   },
+   {
+    "label": "드럼 세탁기",
+    "cls": "drum washing machine",
+    "score": 0.726,
+    "lscore": 0.686,
+    "conf": 0.79
+   },
+   {
+    "label": "드럼 세탁기",
+    "cls": "drum washing machine",
+    "score": 0.723,
+    "lscore": 0.707,
+    "conf": 0.71
+   }
+  ],
+  "컵": [
+   {
+    "label": "컵",
+    "cls": "cup",
+    "score": 0.665,
+    "lscore": 0.666,
+    "conf": 0.73
+   },
+   {
+    "label": "컵",
+    "cls": "cup",
+    "score": 0.655,
+    "lscore": 0.686,
+    "conf": 0.83
+   },
+   {
+    "label": "컵",
+    "cls": "cup",
+    "score": 0.638,
+    "lscore": 0.69,
+    "conf": 0.87
+   }
+  ],
+  "노트북": [
+   {
+    "label": "노트북",
+    "cls": "laptop",
+    "score": 0.709,
+    "lscore": 0.676,
+    "conf": 0.67
+   },
+   {
+    "label": "노트북",
+    "cls": "laptop",
+    "score": 0.705,
+    "lscore": 0.667,
+    "conf": 0.66
+   },
+   {
+    "label": "노트북",
+    "cls": "laptop",
+    "score": 0.704,
+    "lscore": 0.685,
+    "conf": 0.68
+   }
+  ],
+  "휴대폰": [
+   {
+    "label": "노트북",
+    "cls": "laptop",
+    "score": 0.704,
+    "lscore": 0.667,
+    "conf": 0.66
+   },
+   {
+    "label": "휴대폰",
+    "cls": "cell phone",
+    "score": 0.684,
+    "lscore": 0.673,
+    "conf": 0.79
+   },
+   {
+    "label": "노트북",
+    "cls": "laptop",
+    "score": 0.677,
+    "lscore": 0.676,
+    "conf": 0.67
+   }
+  ]
+ },
+ "total_crops": 18,
+ "stats": {
+  "fps": 9.922198944358335,
+  "embed_ms": 607.85346099874
+ }
+}
