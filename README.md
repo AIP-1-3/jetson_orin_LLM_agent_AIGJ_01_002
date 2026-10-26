@@ -12,15 +12,15 @@ Jetson Orin Nano Super 8GB 에서 EmbeddingGemma 2 로 텍스트·이미지·음
 | 단계 | 결과 | 근거 |
 | --- | --- | --- |
 | 1~2 설치 | torch 2.14.1+cu132 (JetPack 7 자동 판별), sentence-transformers 6.2.0 | `setup/`, [문제 해결 1·8](docs/03-engineering-notes.md) |
-| 3 텍스트 | 6/6 정답, 150.6~151.9 ms (768/256/128 차원), 초당 13.3 질의 | [`results/03_text.jsonl`](results/03_text.jsonl) |
-| 4 이미지 | 장면별 6장 1/3 정답, 6장 2.9 초, 최대 20.2 W | [`results/04_vision.jsonl`](results/04_vision.jsonl) |
+| 3 텍스트 | 6/6 정답, 150.6~151.9 ms (768/256/128 차원), 초당 13.3 질의. 프롬프트를 빼면 3/6 | [`results/03_text.jsonl`](results/03_text.jsonl) |
+| 4 이미지·동영상 | 장면별 6장 1/3 정답, 6장 2.7~2.9 초, 동영상 21초(1 fps 프레임) 9.1 초, 텍스트+이미지 혼합 548 ms | [`results/04_vision.jsonl`](results/04_vision.jsonl) |
 | 5 음성 | 2/3 정답 (합성 음성 오답), WAV 3개 427.9 ms | [`results/05_audio.jsonl`](results/05_audio.jsonl) |
-| 6 성능 | 모델 증가분 텍스트 579 MB · 오디오 948 MB, 묶음 32 로 처리량 22배·질의당 에너지 1/12 | [6단계](docs/02-results.md#6단계-성능-측정) |
+| 6 성능 | 모델 증가분 텍스트 579 MB · 오디오 948 MB · 전체 1270 MB(한 인덱스 검색 3/6), 묶음 32 로 처리량 22배·질의당 에너지 1/12 | [6단계](docs/02-results.md#6단계-성능-측정) |
 | 7 미세 조정 | accuracy@1 0.833 → 0.850, 1 epoch 74.8 초, 일반 질의 24/24 → 21/24 | [`results/07_finetune.jsonl`](results/07_finetune.jsonl) |
 | 8 물체 검색 | yolo 11.8 · relabel 13.3 · yoloe 12.7 fps, relabel 이 tv → monitor 7건 교정 | [`results/08_objects.jsonl`](results/08_objects.jsonl) |
 | 9 동작 인식 | 13.6~13.8 fps, 손 흔들기 시간 패턴 판정, 깜빡임 되돌아감 5 → 1 | [`results/09_pose.jsonl`](results/09_pose.jsonl) |
 
-강의자료 결과표 중 아직 비어 있는 칸(동영상, 전체 모델, 8-4 COCO 밖 물체, 9-4~9-6)과 채우는 순서는 [docs/01-self-grade.md](docs/01-self-grade.md) 에 있습니다.
+강의자료 결과표 중 아직 비어 있는 칸(8-4 COCO 밖 물체, 9-4~9-6)과 채우는 순서는 [docs/01-self-grade.md](docs/01-self-grade.md) 에 있습니다.
 
 ## 구성
 
@@ -243,6 +243,7 @@ cd lab && python pose_app.py --raw --seconds 120
 | 2026-10-23 | 10단계 1·2호기 Tailscale 연결(접근 규칙 추가), 영상 서버 포트 8091 로 변경 | [PR #23](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/23), 문제 해결 기록 14 |
 | 2026-10-26 | 강의자료 요구사항 37개 대비 점검(충족 19 · 부분 6 · 미실시 12)과 루브릭 A 셀프 채점(79 → 84). 8-4·9-4 를 자료 표 형식으로 정리, 동영상 프레임 대체·혼합 입력·전체 모델·검색 기록 옵션 추가, 결과 파일에서 카메라 IP 제거 | [docs/01-self-grade.md](docs/01-self-grade.md), [PR #24](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/24) |
 | 2026-10-26 | 마감(10/27) 맞춰 이틀 일정 수립, README 를 요약·실행법으로 줄이고 결과·문제 해결을 docs/02·03 으로 분리, 7단계 평가 데이터 사람 검수표(20쌍), 7단계 실행 명령 추가 | [docs/01-self-grade.md 5절](docs/01-self-grade.md), [docs/04-eval-review.md](docs/04-eval-review.md), 이 PR |
+| 2026-10-26 | 2호기 오전 재측정: GPU 확인 로그, 3단계 프롬프트 없음 3/6, 동영상 21초 9.1 초, 혼합 입력, 전체 모델 30개 13.4 초·3/6. 2호기에 GitHub 인증이 없어 결과 커밋을 git bundle 로 옮김. 결과표가 옛 tegrastats 로그를 짝짓던 버그 수정 | [docs/02-results.md](docs/02-results.md#6단계-성능-측정), 이 PR |
 
 ### 회고 (2026-10-26)
 
