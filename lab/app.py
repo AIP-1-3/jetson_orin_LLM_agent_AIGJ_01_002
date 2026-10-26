@@ -288,7 +288,10 @@ def finish():
 if __name__ == "__main__":
     threading.Thread(target=capture_loop, daemon=True).start()
     threading.Thread(target=embed_loop, daemon=True).start()
-    server = uvicorn.Server(uvicorn.Config(app, host="0.0.0.0", port=args.port, log_level="warning"))
+    # 브라우저가 /stream(끝없는 MJPEG)을 열어 두면 uvicorn 이 그 연결이 끝나기를 기다려 --seconds 가 지나도
+    # 꺼지지 않았다 (10-26 첫 yolo 가 6분 반 동안 기록됨). 2초만 기다리고 연결을 끊는다.
+    server = uvicorn.Server(uvicorn.Config(app, host="0.0.0.0", port=args.port, log_level="warning",
+                                           timeout_graceful_shutdown=2))
     if args.seconds > 0:
         threading.Timer(args.seconds, lambda: setattr(server, "should_exit", True)).start()
     try:
