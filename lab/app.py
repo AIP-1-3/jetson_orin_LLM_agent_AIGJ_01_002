@@ -32,7 +32,7 @@ from fastapi.staticfiles import StaticFiles
 from ultralytics import YOLO
 
 from bench import REPO, Recorder
-from camera import LatestFrame, default_source, mask
+from camera import LatestFrame, default_source, mask, source_label
 from eg2 import load
 
 # ---------------- 실행 모드 ----------------
@@ -45,6 +45,10 @@ ap.add_argument("--conf", type=float, default=None, help="검출 신뢰도 (기�
 ap.add_argument("--port", type=int, default=8000)
 ap.add_argument("--source", default=None, help="RTSP 주소 또는 USB 번호 (기본: .env 의 CAM_URL, 없으면 0)")
 ap.add_argument("--seconds", type=float, default=0, help="0 이면 Ctrl+C 까지, 아니면 N초 뒤 기록하고 종료")
+ap.add_argument("--min-score", type=float, default=0.0,
+                help="확장 과제: 검색 점수가 이 값 미만인 결과를 숨김 (자료 예: 0.3)")
+ap.add_argument("--probe", nargs="*", default=[], metavar="질의",
+                help="끝낼 때 이 질의들로 검색해 상위 3개를 기록 (8-1 의 '세탁기'·'건전지' 검색 확인용)")
 args = ap.parse_args()
 MODE = args.mode
 
@@ -216,7 +220,7 @@ def search(q: str, k: int = 12):
     with emb_lock, torch.inference_mode():
         qv = emb.encode(q, prompt_name="SearchQuery", truncate_dim=DIM, normalize_embeddings=True)
     s = np.stack([it["vec"] for it in snap]) @ np.asarray(qv, dtype=np.float32)
-    return [public(snap[i], s[i]) for i in s.argsort()[::-1][:k]]
+    return [public(snap[i], s[i]) for i in s.argsort()[::-1][:k] if s[i] >= args.min_score]
 
 
 @app.get("/recent")
@@ -263,7 +267,7 @@ def finish():
     f = fps_hist[5:] or fps_hist
     rec.row["measures"]["검출"] = [{"fps_mean": round(float(np.mean(f)), 1) if f else 0.0,
                                    "fps_min": round(float(np.min(f)), 1) if f else 0.0,
-                                   "seconds": args.seconds, "source": mask(cam.source).split("@")[-1]}]
+                                   "seconds": args.seconds, "source": source_label(cam.source)}]
     if embed_hist:
         rec.row["measures"]["임베딩"] = [{"ms_per_crop": round(float(np.mean(embed_hist)), 1),
                                         "batches": len(embed_hist)}]
@@ -271,6 +275,13 @@ def finish():
     rec.row["detector_labels"] = dict(det_counts.most_common())
     rec.row["label_changes"] = dict(final_counts.most_common())
     rec.row["conf"] = CONF
+    if args.min_score:
+        rec.row["min_score"] = args.min_score
+    if args.probe:
+        # 검색은 라벨이 아니라 크롭 임베딩을 비교한다. 라벨이 틀려도 검색이 맞는지 여기서 확인한다 (자료 8-1).
+        rec.row["probe"] = {q: [(r["label"], r["cls"], r["score"]) for r in search(q, k=3)] for q in args.probe}
+        for q, top in rec.row["probe"].items():
+            print(f"  검색 '{q}' -> {top}")
     rec.save()
 
 

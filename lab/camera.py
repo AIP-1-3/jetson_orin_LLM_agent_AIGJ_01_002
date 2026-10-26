@@ -47,6 +47,19 @@ def mask(source):
     return s
 
 
+def source_label(source):
+    """결과 파일(공개 저장소)에 남길 입력 이름. 계정과 카메라 IP 를 빼고 스트림 경로만 남긴다.
+
+    예) rtsp://admin:pw@10.0.0.5:554/stream2 -> rtsp://<카메라>/stream2, USB 0 -> usb:0
+    """
+    s = str(source)
+    if "://" not in s:
+        return f"usb:{s}"
+    scheme, rest = s.split("://", 1)
+    path = rest.rsplit("@", 1)[-1].split("/", 1)
+    return f"{scheme}://<카메라>/{path[1] if len(path) > 1 else ''}"
+
+
 def open_capture(source, width=None, height=None):
     s = str(source)
     if s.isdigit():
