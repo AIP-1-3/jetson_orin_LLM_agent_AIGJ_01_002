@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, StreamingResponse
 from ultralytics import YOLO
 from bench import Recorder
-from camera import LatestFrame, default_source, mask
+from camera import LatestFrame, default_source, mask, source_label
 from pose_model import (KP_CONF, NOSE, LS, RS, LW, RW, body, facing_score,
                         frame_features, load_model, predict)
 
@@ -68,6 +68,7 @@ stats = {"fps": 0.0, "people": 0}
 fps_hist = []                         # 측정 기록용 1초 평균 fps
 rec = None
 if args.record:
+    os.makedirs(os.path.dirname(args.record) or ".", exist_ok=True)
     rec_f = open(args.record, "a", newline="")
     rec = csv.writer(rec_f)
 
@@ -352,7 +353,7 @@ def finish():
     f = fps_hist[5:] or fps_hist
     meter.row["measures"]["검출"] = [{"fps_mean": round(float(np.mean(f)), 1) if f else 0.0,
                                      "fps_min": round(float(np.min(f)), 1) if f else 0.0,
-                                     "seconds": args.seconds, "source": mask(cam.source).split("@")[-1]}]
+                                     "seconds": args.seconds, "source": source_label(cam.source)}]
     with ev_lock:
         meter.row["counts"] = dict(counts)
         meter.row["behavior"] = dict(beh_counts)

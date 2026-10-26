@@ -1,4 +1,4 @@
-"""6단계 성능 표 만들기: results/*.jsonl 과 tegrastats 로그를 읽어 Markdown 표로 출력한다.
+"""6단계 성능 표 만들기 (3~5단계 + 전체 모델 혼합 06_all): results/*.jsonl 과 tegrastats 로그를 읽어 Markdown 표로 출력한다.
 
 보고서 숫자를 손으로 옮기지 않고 이 출력에서 그대로 붙여 넣는다 (문서·코드 숫자 일치).
 사용: python lab/results_table.py            # 3~5단계 최신 측정
@@ -11,7 +11,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 RESULTS = REPO / "results"
-STEPS = ["03_text", "04_vision", "05_audio"]
+STEPS = ["03_text", "04_vision", "05_audio", "06_all"]
 
 
 def load_rows(step):
