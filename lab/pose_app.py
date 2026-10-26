@@ -369,7 +369,9 @@ if __name__ == "__main__":
     print(f"source={mask(cam.source)}")
     meter_t0 = time.time()
     threading.Thread(target=capture_loop, daemon=True).start()
-    server = uvicorn.Server(uvicorn.Config(app, host="0.0.0.0", port=args.port, log_level="warning"))
+    # app.py 와 같은 이유: 열린 /stream 연결 때문에 --seconds 가 지나도 안 꺼지는 것을 막는다
+    server = uvicorn.Server(uvicorn.Config(app, host="0.0.0.0", port=args.port, log_level="warning",
+                                           timeout_graceful_shutdown=2))
     if args.seconds > 0:
         threading.Timer(args.seconds, lambda: setattr(server, "should_exit", True)).start()
     try:
