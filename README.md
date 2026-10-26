@@ -3,7 +3,7 @@
 Jetson Orin Nano Super 8GB 에서 EmbeddingGemma 2 로 텍스트·이미지·음성을 한 벡터 공간에서 검색하고, IP 카메라 물체 검색·동작 인식으로 넓힌 실습 저장소입니다.
 
 - **해결하는 문제**: 강의자료는 JetPack 6·USB 웹캠 기준이라 우리 장비(JetPack 7, IP 카메라)에서 그대로 돌지 않습니다. 장비 차이를 자동으로 판별해 설치하고, 모든 측정값을 측정 조건과 함께 파일로 남깁니다.
-- **핵심 결과** (2호기, MAXN_SUPER, bfloat16): 텍스트 검색 6/6 정답·질의 2개 151 ms, 묶음 32 로 처리량 22배(6.5 → 145.9 질의/초), 도메인 미세 조정 accuracy@1 0.833 → 0.850, 물체 검출 11.8~13.3 fps 에서 임베딩으로 라벨 교정(tv → monitor), 자세 인식 13.6~13.8 fps.
+- **핵심 결과** (2호기, MAXN_SUPER, bfloat16): 텍스트 검색 6/6 정답·질의 2개 151 ms, 묶음 32 로 처리량 22배(6.5 → 145.9 질의/초), 도메인 미세 조정 accuracy@1 0.833 → 0.850, 물체 검출 10.9~12.9 fps, COCO 밖 물체(세탁기 사진) 검색 1위 정답 yolo 1 → relabel 2 → yoloe 3개(5개 중), 자세 인식 13.6~13.8 fps.
 - **시연 링크**: 준비 중
 - **문서**: [단계별 결과](docs/02-results.md) · [기술적 고민과 문제 해결 과정](docs/03-engineering-notes.md) · [강의자료 대비 점검과 셀프 채점](docs/01-self-grade.md) · [강의자료 정리](docs/00-lecture-summary.md)
 
@@ -17,7 +17,7 @@ Jetson Orin Nano Super 8GB 에서 EmbeddingGemma 2 로 텍스트·이미지·음
 | 5 음성 | 2/3 정답 (합성 음성 오답), WAV 3개 427.9 ms | [`results/05_audio.jsonl`](results/05_audio.jsonl) |
 | 6 성능 | 모델 증가분 텍스트 579 MB · 오디오 948 MB · 전체 1270 MB(한 인덱스 검색 3/6), 묶음 32 로 처리량 22배·질의당 에너지 1/12 | [6단계](docs/02-results.md#6단계-성능-측정) |
 | 7 미세 조정 | accuracy@1 0.833 → 0.850, 1 epoch 74.8 초, 일반 질의 24/24 → 21/24 | [`results/07_finetune.jsonl`](results/07_finetune.jsonl) |
-| 8 물체 검색 | yolo 11.8 · relabel 13.3 · yoloe 12.7 fps, relabel 이 tv → monitor 7건 교정 | [`results/08_objects.jsonl`](results/08_objects.jsonl) |
+| 8 물체 검색 | 같은 물체 5종 통제 실험(각 150초): 검색 1위 정답 yolo 1 · relabel 2 · yoloe 3개, fps 12.9 · 11.5 · 10.9 → 강의실용으로 yoloe 선택. relabel 은 tv → monitor 교정, 대신 맞는 cup 도 물병으로 바꿈 | [`results/08_objects.jsonl`](results/08_objects.jsonl), [8-4 표](docs/02-results.md#8단계-웹캠-물체-추출과-검색) |
 | 9 동작 인식 | 13.6~13.8 fps, 손 흔들기 시간 패턴 판정, 깜빡임 되돌아감 5 → 1 | [`results/09_pose.jsonl`](results/09_pose.jsonl) |
 
 강의자료 결과표 중 아직 비어 있는 칸(8-4 COCO 밖 물체, 9-4~9-6)과 채우는 순서는 [docs/01-self-grade.md](docs/01-self-grade.md) 에 있습니다.
@@ -205,7 +205,7 @@ cd lab && python app.py --mode yolo --seconds 120
 8-1 의 검색 확인은 `--probe` 로 남깁니다. 끝날 때 각 질의의 상위 3개(라벨, YOLO 클래스, 점수)가 결과 파일에 들어갑니다. `--min-score 0.3` 은 확장 과제의 점수 필터입니다.
 
 ```bash
-python app.py --mode relabel --seconds 90 --probe 세탁기 건전지 컵
+python app.py --mode relabel --seconds 150 --probe 세탁기 건전지 전지 컵 휴대폰 노트북
 ```
 
 ```bash
@@ -244,6 +244,7 @@ cd lab && python pose_app.py --raw --seconds 120
 | 2026-10-26 | 강의자료 요구사항 37개 대비 점검(충족 19 · 부분 6 · 미실시 12)과 루브릭 A 셀프 채점(79 → 84). 8-4·9-4 를 자료 표 형식으로 정리, 동영상 프레임 대체·혼합 입력·전체 모델·검색 기록 옵션 추가, 결과 파일에서 카메라 IP 제거 | [docs/01-self-grade.md](docs/01-self-grade.md), [PR #24](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/24) |
 | 2026-10-26 | 마감(10/27) 맞춰 이틀 일정 수립, README 를 요약·실행법으로 줄이고 결과·문제 해결을 docs/02·03 으로 분리, 7단계 평가 데이터 사람 검수표(20쌍), 7단계 실행 명령 추가 | [docs/01-self-grade.md 5절](docs/01-self-grade.md), [docs/04-eval-review.md](docs/04-eval-review.md), 이 PR |
 | 2026-10-26 | 2호기 오전 재측정: GPU 확인 로그, 3단계 프롬프트 없음 3/6, 동영상 21초 9.1 초, 혼합 입력, 전체 모델 30개 13.4 초·3/6. 2호기에 GitHub 인증이 없어 결과 커밋을 git bundle 로 옮김. 결과표가 옛 tegrastats 로그를 짝짓던 버그 수정 | [docs/02-results.md](docs/02-results.md#6단계-성능-측정), 이 PR |
+| 2026-10-26 | 8-4 물체 비교 통제 실험(컵·노트북·휴대폰·건전지·세탁기 사진, 세 모드 각 150초): 검색 1위 정답 1·2·3개로 8단계 결론을 relabel → yoloe 로 변경. 웹 화면이 열려 있으면 측정 앱이 안 꺼지던 문제 수정, 셀프 채점 87 → 90 | [docs/02-results.md 8-4](docs/02-results.md#8단계-웹캠-물체-추출과-검색), 문제 해결 기록 15, 이 PR |
 
 ### 회고 (2026-10-26)
 
