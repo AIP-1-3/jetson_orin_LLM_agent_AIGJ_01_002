@@ -21,14 +21,22 @@ def mem_used_mb():
 
 
 def app_rss_mb():
-    """proximity_app.py 프로세스 RSS (없으면 None)"""
+    """proximity_app.py 프로세스 RSS (없으면 None)
+    pgrep -f 는 tmux 를 띄운 셸(bash -c "... proximity_app.py ...")도 잡는다. 10-27 에는 첫 PID 가 그 셸로 추정되며
+    3MB 가 기록됐다 → 잡힌 프로세스 중 RSS 가 가장 큰 것(파이썬 본체)을 쓴다."""
+    rss = []
     try:
-        pid = subprocess.check_output(["pgrep", "-f", "proximity_app.py"], text=True).split()[0]
-        for l in open(f"/proc/{pid}/status"):
-            if l.startswith("VmRSS:"):
-                return round(int(l.split()[1]) / 1024)
+        pids = subprocess.check_output(["pgrep", "-f", "proximity_app.py"], text=True).split()
     except Exception:
         return None
+    for pid in pids:
+        try:
+            for l in open(f"/proc/{pid}/status"):
+                if l.startswith("VmRSS:"):
+                    rss.append(int(l.split()[1]))
+        except OSError:
+            continue
+    return round(max(rss) / 1024) if rss else None
 
 
 ds, kinds, fps, skew, seen, polls, mode, ids = [], {}, [], [], 0, 0, None, set()
