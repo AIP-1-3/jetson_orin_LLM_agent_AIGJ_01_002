@@ -133,6 +133,7 @@ row = {"time": time.strftime("%Y-%m-%d %H:%M:%S"), "step": "10-2", "method": "fl
        "cams": {f"cam{n}": {"pos_m": sol[n]["C"].round(3).tolist(),
                             "reproj_mean_px": round(float(sol[n]["err"].mean()), 3),
                             "reproj_max_px": round(float(sol[n]["err"].max()), 3), **info[n]} for n in (0, 1)},
+       "board_center_xy": obj[:, :2].mean(0).round(3).tolist(),
        "baseline_m": round(baseline, 3), "view_angle_deg": round(angle, 1),
        "triangulation_err_cm": {"mean": round(float(tri_err_cm.mean()), 2), "max": round(float(tri_err_cm.max()), 2)}}
 with open(RESULTS / "10_extrinsics.jsonl", "a", encoding="utf-8") as f:
@@ -140,6 +141,7 @@ with open(RESULTS / "10_extrinsics.jsonl", "a", encoding="utf-8") as f:
 
 for n in (0, 1):
     print(f"cam{n} 위치(m) {sol[n]['C'].round(2)}  재투영 평균 {sol[n]['err'].mean():.2f}px")
+print(f"보드 가운데 바닥 좌표(m) {obj[:, :2].mean(0).round(3).tolist()}  ← 타겟을 이 자리에 두면 --target-xy 로 그대로 쓴다")
 print(f"두 카메라 거리 {baseline:.2f}m, 시선 사이 각 {angle:.0f}도")
 print(f"삼각측량 검증 오차 평균 {tri_err_cm.mean():.1f}cm, 최대 {tri_err_cm.max():.1f}cm")
 print("저장: calib/cam0.npz, calib/cam1.npz, calib/world_points.json, results/10_extrinsics.jsonl")
