@@ -1,0 +1,29 @@
+Mon Oct 26 04:42:12 PM KST 2026
+[gpu-run] aip-1-3-2 실행 시작: bash -c time python train_pose.py --data ../data/action --task action --window 30 --out models/action.pt
+           idle: 학습 105, 검증 20 윈도
+             만세: 학습 95, 검증 20 윈도
+           손흔들기: 학습 105, 검증 22 윈도
+           한팔들기: 학습 98, 검증 20 윈도
+epoch   0  loss 1.079  val acc 0.744
+epoch   5  loss 0.776  val acc 0.939
+epoch  10  loss 0.075  val acc 1.000
+epoch  15  loss 0.022  val acc 1.000
+epoch  20  loss 0.021  val acc 1.000
+epoch  25  loss 0.008  val acc 1.000
+epoch  30  loss 0.006  val acc 1.000
+epoch  35  loss 0.004  val acc 0.988
+epoch  39  loss 0.048  val acc 1.000
+
+최고 검증 정확도 1.000
+혼동 행렬 (행=정답, 열=예측)
+                     idle       만세     손흔들기     한팔들기
+           idle        20        0        0        0
+             만세         0       20        0        0
+           손흔들기         0        0       22        0
+           한팔들기         0        0        0       20
+
+저장: models/action.pt  (task=action, window=30, labels=['idle', '만세', '손흔들기', '한팔들기'])
+
+real	0m8.210s
+user	0m8.374s
+sys	0m0.804s
