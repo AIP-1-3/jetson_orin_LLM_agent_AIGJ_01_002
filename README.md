@@ -21,6 +21,7 @@ Jetson Orin Nano Super 8GB 에서 EmbeddingGemma 2 로 텍스트·이미지·음
 | 7 미세 조정 | accuracy@1 0.833 → 0.850, 1 epoch 74.8 초, 일반 질의 24/24 → 21/24 | [`results/07_finetune.jsonl`](results/07_finetune.jsonl) |
 | 8 물체 검색 | 같은 물체 5종 통제 실험(각 150초): 검색 1위 정답 yolo 1 · relabel 2 · yoloe 3개, fps 12.9 · 11.5 · 10.9 → 강의실용으로 yoloe 선택. relabel 은 tv → monitor 교정, 대신 맞는 cup 도 물병으로 바꿈 | [`results/08_objects.jsonl`](results/08_objects.jsonl), [8-4 표](docs/02-results.md#8단계-웹캠-물체-추출과-검색) |
 | 9 동작 인식 | 같은 대본(만세 6·한팔들기 3·손흔들기 3)에서 smooth 만세 6·손흔들기 3 정확, raw 는 손 흔들기 판정 없음, GRU 는 검증 1.000 이지만 16번 더 셈 → 규칙 smooth 선택. 관심도 4개 상황 6/12(머무름 0/3 원인 분석). 처음 보는 사람(팀원 A): 두 방식 모두 만세 6/6, GRU 손흔들기 1/3. 악수 3회 모두 검출(카운트는 12로 부풂). 12.9~17.3 fps, RAM 3.5~4.0 GB | [`results/09_pose.jsonl`](results/09_pose.jsonl), [9단계](docs/02-results.md#9단계-사람-동작-인식) |
+| 10 두 카메라 접근 감지 (진행 중) | 렌즈 보정 RMS 0.063(1호기)·1.81(2호기), 바닥 보드 위치 보정 두 번 차이 0.1cm. ankle1 이 자로 잰 0.52m 를 0.52m 로 측정(25.8 fps). 2m·3m·stereo·fused 는 공간을 넓혀 다시 잼 | [`results/10_*.jsonl`](results/), [10단계](docs/02-results.md#10단계-두-카메라-접근-감지-진행-중-2026-10-27-1일차), [문제 해결 24~30](docs/03-engineering-notes.md) |
 
 강의자료 요구 37개 중 36개를 실측으로 채웠습니다. 남은 칸(8단계 선택 확장 yoloe+relabel)과 셀프 채점은 [docs/01-self-grade.md](docs/01-self-grade.md) 에 있습니다.
 
@@ -242,6 +243,46 @@ python pose_app.py --behavior --seconds 360
 
 8·9단계 결과(강의자료 8-4·9-4 표 포함)는 [docs/02-results.md](docs/02-results.md#8단계-웹캠-물체-추출과-검색) 에 있습니다.
 
+### 10단계 두 카메라 접근 감지 (진행 중)
+
+cam0 은 2호기 USB 카메라, cam1 은 1호기 USB 카메라입니다. 1호기에서 영상을 내보내고(포트 8140), 2호기에서 두 영상을 받아 계산합니다. 아래 명령은 2호기 `~/eg2-lab/prox` 에서 실행합니다(1호기 명령만 1호기에서). 2호기 카메라도 같은 서버로 8141 에 띄워 맥에서 화면을 확인합니다.
+
+1호기:
+
+```bash
+python prox/cam_server.py --cam 0 --port 8140
+```
+
+2호기:
+
+```bash
+python cam_server.py --cam 0 --port 8141
+```
+
+렌즈 보정(카메라마다, 보드를 들고 여러 거리·각도로):
+
+```bash
+python calib_intrinsics.py --name cam0 --src http://127.0.0.1:8141/stream.mjpg --square 0.02
+```
+
+위치 보정(보드를 두 화면 모두에서 화면 폭 1/6 이상 보이게 바닥에 놓고):
+
+```bash
+python calib_extrinsics_board.py --cams http://127.0.0.1:8141/stream.mjpg http://<1호기 Tailscale 주소>:8140/stream.mjpg --square 0.02 --board-height 0
+```
+
+접근 감지와 10-7 측정(사람이 줄자로 잰 자리에 선 동안 10초):
+
+```bash
+python proximity_app.py --cams http://127.0.0.1:8141/stream.mjpg http://<1호기 Tailscale 주소>:8140/stream.mjpg --mode ankle1 --target-xy 0.08,-0.05
+```
+
+```bash
+python measure_10_7.py --label "1.0m, 서 있음" --true-d 1.0 --seconds 10
+```
+
+10단계 결과와 실패 기록은 [docs/02-results.md](docs/02-results.md#10단계-두-카메라-접근-감지-진행-중-2026-10-27-1일차) 와 문제 해결 24~30 에 있습니다.
+
 ## 진행 기록과 회고
 
 | 날짜 | 한 일 | 근거 |
@@ -276,6 +317,7 @@ python pose_app.py --behavior --seconds 360
 | 2026-10-27 | 10-26 측정 결과를 문서에 반영, 시연 화면 연결, 셀프 채점 92 → 99 | [docs/01-self-grade.md](docs/01-self-grade.md), [PR #29](https://github.com/AIP-1-3/jetson_orin_LLM_agent_AIGJ_01_002/pull/29) |
 | 2026-10-27 | 팀원 A 와 9단계 마지막 측정: 악수 3회(모두 검출, 카운트 12로 부풂), 처음 보는 사람 평가(smooth·GRU 모두 만세 6/6, GRU 손흔들기 1/3). 핫스팟 대역이 바뀌어 카메라 주소를 다시 찾고, 측정 중 재부팅으로 악수를 다시 잼. 셀프 채점 99 → 100 | [02-results 9단계](docs/02-results.md#9단계-사람-동작-인식), 문제 해결 기록 22·23, 이 PR |
 | 2026-10-27 | 10단계 시작: 2호기 점검(VIGI·Tailscale·패키지 정상), 1호기 USB 카메라 확인(`/dev/video0`), 8091 도 사용 중이라 영상 서버 포트를 8140 으로 변경 | 문제 해결 기록 14, 이 PR |
+| 2026-10-27 | 10단계 1일차: 렌즈 보정(1호기 0.063 · 2호기 1.81px), 바닥 보드 위치 보정 4번째 배치에서 성공(재현성 0.1cm). ankle1 0.52m 오차 0. 보드가 작아 위치가 2m 흔들림, 책상이 발목을 가림, 공간 0.52m 등 실패 7건 기록. 앱 메모리 기록 버그 수정 | [10단계](docs/02-results.md#10단계-두-카메라-접근-감지-진행-중-2026-10-27-1일차), 문제 해결 24~30, 이 PR |
 
 ### 회고 (2026-10-26)
 
