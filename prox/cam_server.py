@@ -4,8 +4,8 @@
 IP 카메라(VIGI)가 2호기에 있어서, 1호기가 USB 영상을 HTTP MJPEG 로 내보내고 2호기가 RTSP 와 함께 받는다.
 모델을 올리지 않으므로 1호기 GPU·메모리를 거의 쓰지 않는다. 프레임은 저장하지 않는다.
 
-사용 (1호기에서): python cam_server.py --cam 0 --port 8091
-받는 쪽 (2호기): http://<1호기 Tailscale 주소>:8091/stream.mjpg
+사용 (1호기에서): python cam_server.py --cam 0 --port 8140
+받는 쪽 (2호기): http://<1호기 Tailscale 주소>:8140/stream.mjpg
 """
 import argparse
 import sys
@@ -25,7 +25,7 @@ ap.add_argument("--cam", default="0", help="USB 장치 번호 (v4l2-ctl --list-d
 ap.add_argument("--res", default="640x480")
 ap.add_argument("--fps", type=float, default=15, help="내보내는 최대 fps (Tailscale 대역폭 절약)")
 ap.add_argument("--quality", type=int, default=80)
-ap.add_argument("--port", type=int, default=8091, help="1호기 8090 은 다른 프로젝트(센서 수집 서버)가 사용 중")
+ap.add_argument("--port", type=int, default=8140, help="1호기 8000·8086·8090·8091·8100·8130 은 이미 사용 중 (10-27 ss -ltn 확인)")
 args = ap.parse_args()
 W, H = map(int, args.res.split("x"))
 cam = LatestFrame(args.cam, W, H)

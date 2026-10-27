@@ -4,7 +4,7 @@
 --mode fused  : stereo + 한 카메라에만 보이는 사람은 높이 평면으로 추정 (10-5 보완, 기본)
 타겟 위치: --target "문구"로 YOLOE 후보 + EmbeddingGemma 2 재확인 후 삼각측량, 또는 --target-xy x,y 직접 지정
 --moving      : 타겟도 매 프레임 추적 (칼만 필터 + 상대 속도 + 충돌 예상 시간 TTC 알람) (10-8)
-사용법: python proximity_app.py --cams rtsp://... http://<1호기>:8091/stream.mjpg --target "red fire extinguisher"
+사용법: python proximity_app.py --cams rtsp://... http://<1호기>:8140/stream.mjpg --target "red fire extinguisher"
 자료와 다른 점: 두 카메라가 서로 다른 Jetson 에 붙어 있다 (2호기 VIGI RTSP, 1호기 USB). 1호기는 cam_server.py 로
 USB 영상을 Tailscale 에 MJPEG 로 내보내고, 2호기가 두 영상을 받아 계산한다. --cams 에는 장치 번호 대신 주소를 준다.
 카메라 시간 차(skew)는 각 프레임을 2호기가 "받은" 시각의 차이라서, 두 경로의 전송 지연 차이는 포함하지 못한다.
