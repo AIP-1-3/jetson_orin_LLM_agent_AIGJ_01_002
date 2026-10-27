@@ -2,7 +2,7 @@
 calib_extrinsics.py(테이프 기준점 줄자 측정 + 웹 클릭)를 대신한다. 재는 일도 클릭도 없다.
 사용법: 체커보드를 두 카메라에 모두 보이는 바닥에 평평하게 놓고
         python calib_extrinsics_board.py --cams "$CAM_URL" http://<1호기>:8140/stream.mjpg
-좌표계: 원점 = 보드 첫 내부 코너, x = 보드 가로(코너 9개 방향), y = 보드 세로, z = 위(카메라 쪽 +), 단위 m
+좌표계: 원점 = 보드 첫 내부 코너 바로 아래 바닥(--board-height), x = 보드 가로(코너 9개 방향), y = 보드 세로, z = 위(카메라 쪽 +), 단위 m
 결과: calib/cam0.npz, calib/cam1.npz (calib_extrinsics.py 와 같은 형식), calib/world_points.json (방 범위),
       results/10_extrinsics.jsonl (카메라 위치, 재투영 오차, 두 카메라 삼각측량 검증 오차)
 
@@ -25,6 +25,8 @@ ap.add_argument("--cams", nargs=2, required=True, help="cam0, cam1 영상 주소
 ap.add_argument("--cols", type=int, default=9)
 ap.add_argument("--rows", type=int, default=6)
 ap.add_argument("--square", type=float, default=0.025, help="칸 한 변(m). 크게 출력했으면 실제 잰 값")
+ap.add_argument("--board-height", type=float, default=0.0,
+                help="보드를 바닥이 아닌 책상 등에 놓았을 때 그 높이(m). 바닥이 z=0 이 되도록 좌표를 올린다 (ankle1 모드는 발목 z=0 을 가정)")
 ap.add_argument("--frames", type=int, default=10, help="카메라마다 평균낼 검출 횟수")
 ap.add_argument("--timeout", type=float, default=60, help="카메라마다 검출을 기다릴 최대 시간(초)")
 ap.add_argument("--room", type=float, nargs=4, default=[-1.5, -1.5, 2.5, 2.5], metavar=("X0", "Y0", "X1", "Y1"),
@@ -79,6 +81,7 @@ def collect(n, src):
 
 obj = np.zeros((args.rows * args.cols, 3), np.float64)
 obj[:, :2] = np.mgrid[0:args.cols, 0:args.rows].T.reshape(-1, 2) * args.square
+obj[:, 2] = args.board_height      # 보드 윗면 높이 → 바닥 = z 0
 
 pts, sizes, info = {}, {}, {}
 for n, src in enumerate(args.cams):
@@ -101,7 +104,7 @@ def solve(objp):
 
 
 sol = solve(obj)
-if sol[0]["C"][2] < 0:          # z 가 바닥 아래를 향하면 y 를 뒤집어 z = 위로 맞춘다
+if sol[0]["C"][2] < args.board_height:          # z 가 바닥 아래를 향하면 y 를 뒤집어 z = 위로 맞춘다
     obj[:, 1] *= -1
     sol = solve(obj)
 
@@ -126,7 +129,7 @@ world = {"_설명": "10-2 자동판(calib_extrinsics_board.py): 원점=바닥 �
 json.dump(world, open(CALIB / "world_points.json", "w"), ensure_ascii=False, indent=1)
 
 row = {"time": time.strftime("%Y-%m-%d %H:%M:%S"), "step": "10-2", "method": "floor-checkerboard",
-       "board": [args.cols, args.rows, args.square],
+       "board": [args.cols, args.rows, args.square], "board_height_m": args.board_height,
        "cams": {f"cam{n}": {"pos_m": sol[n]["C"].round(3).tolist(),
                             "reproj_mean_px": round(float(sol[n]["err"].mean()), 3),
                             "reproj_max_px": round(float(sol[n]["err"].max()), 3), **info[n]} for n in (0, 1)},
