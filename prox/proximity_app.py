@@ -68,6 +68,7 @@ class ProximityAlarm:
     def __init__(self, near, far, margin=0.2, v_th=0.3):
         self.near, self.far, self.m, self.v_th = near, far, margin, v_th
         self.zone, self.hist, self.trend, self.ttc_on = "mid", [], "정지", False
+        self.approach_on = False   # 이번 접근을 이미 알렸는지 (far 밖에서 걷기 시작해도 far 안에 들어올 때 알림)
     def update_ttc(self, closing, ttc, d):
         """이동 타겟: 빠르게 가까워지고 TTC가 짧으면 충돌 위험 알람 (조건이 풀리면 다시 무장)"""
         danger = closing > CLOSE_V and ttc is not None and ttc < args.ttc
@@ -85,8 +86,10 @@ class ProximityAlarm:
         v = (self.hist[-1][1] - self.hist[0][1]) / span if span > 0.3 else 0.0
         trend = "접근 중" if v < -self.v_th else "멀어지는 중" if v > self.v_th else "정지"
         ev = []
-        if trend == "접근 중" and self.trend != "접근 중" and d < self.far:
-            ev.append(f"접근 시작 ({d:.1f}m)")
+        if trend == "접근 중" and d < self.far and not self.approach_on:
+            ev.append(f"접근 시작 ({d:.1f}m)"); self.approach_on = True
+        elif trend != "접근 중":
+            self.approach_on = False
         self.trend = trend
         if self.zone != "near" and d < self.near:
             self.zone = "near"; ev.append(f"알람: 근접 {d:.1f}m")
