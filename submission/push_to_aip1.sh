@@ -34,8 +34,8 @@ fi
 for name in embedding_gemma2 camera_applications; do
   if [ "$ONLY" != all ] && [ "$ONLY" != "$name" ]; then continue; fi
   case "$name" in
-    embedding_gemma2)    dst="$DST/embedding_gemma2-AIGJ_01_002.git";                             scope="1~7단계(환경·임베딩 기초·미세 조정)" ;;
-    camera_applications) dst="$DST/practice_task_for_jetson_camera_applications-AIGJ_01_002.git"; scope="8~10단계(카메라 응용)" ;;
+    embedding_gemma2)    dst="$DST/embedding_gemma2-AIGJ_01_002.git";                             scope="1~7단계: 환경·임베딩 기초·미세 조정" ;;
+    camera_applications) dst="$DST/practice_task_for_jetson_camera_applications-AIGJ_01_002.git"; scope="8~10단계: 카메라 응용" ;;
   esac
   dir="$WORK/$name"
   git clone -q "$SRC_EG" "$dir"
